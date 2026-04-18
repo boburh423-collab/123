@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.pvzmod.game'
+    namespace 'com.pvzmod'
     compileSdk 34
 
     defaultConfig {

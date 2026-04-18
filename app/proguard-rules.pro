@@ -1,0 +1,7 @@
+-keep class com.pvzmod.game.** { *; }
+-keepclasseswithmembernames class * { native <methods>; }
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
+-keep class okio.** { *; }
+-obfuscationdictionary dictionary.txt

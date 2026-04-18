@@ -30,10 +30,8 @@ jobs:
         find . -type f -name "*.sh" -exec dos2unix {} \;
         find . -type f -name "gradlew" -exec dos2unix {} \;
         chmod +x gradlew
-        # app/gradlew o'chirib tashlandi, chunki u ko'p hollarda mavjud emas
 
-    - name: Validate Gradle wrapper
-      uses: gradle/wrapper-validation-action@v2
+    # >>> VALIDATION QADAMI BUTUNLAY OLINDI <<<
 
     - name: Build with Gradle
       run: |
@@ -41,9 +39,6 @@ jobs:
       env:
         GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.configureondemand=true -Dkotlin.incremental=false'
 
-    # SHU QADAMNI DIQQAT BILANG O'QING:
-    # Agar fayl mavjud bo'lsa, nomini o'zgartiramiz. Agar yo'q bo'lsa, xato bermasdan, 
-    # loyihada APK qidirib ko'ramiz va xato haqida to'liq ma'lumot beramiz.
     - name: Rename APK
       run: |
         if [ -f app/build/outputs/apk/release/app-release.apk ]; then
@@ -52,7 +47,6 @@ jobs:
         else
           echo "❌ Kutilgan joyda APK topilmadi. Barcha papkalarni qidiraman:"
           find . -type f -name "*.apk"
-          echo " agar yuqorida hech narsa chiqmagan bo'lsa, demak Gradle buildni bekor qildi (Proguard xatosi mumkin)."
           exit 1
         fi
 

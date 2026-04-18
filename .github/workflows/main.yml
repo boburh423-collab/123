@@ -19,8 +19,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # SHU QADAM QO'SHILDI: Agar gradle-wrapper.jar fayli yo'q bo'lsa, 
-    # GitHub o'zi uni yuklab oladi va loyihaga joylaydi!
     - name: Generate missing Gradle Wrapper
       run: |
         echo "Gradle wrapper fayli tekshirilmoqda..."
@@ -37,6 +35,11 @@ jobs:
           chmod +x gradlew
         fi
 
+    - name: Fix build.gradle repository conflict
+      run: |
+        echo "settings.gradle bilan build.gradle orasidagi chalkashlik avtomatik tuzatilmoqda..."
+        sed -i '/^allprojects/,/^}/d' build.gradle
+
     - name: Build with Gradle
       run: ./gradlew assembleRelease --stacktrace
       env:
@@ -46,6 +49,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: PvZMod-APK
-        # Qattiq yo'l o'rniga, barcha release papkalarini qidiradi
         path: '**/build/outputs/apk/release/*.apk'
         retention-days: 30

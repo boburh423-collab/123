@@ -37,8 +37,14 @@ jobs:
 
     - name: Fix build.gradle repository conflict
       run: |
-        echo "settings.gradle bilan build.gradle orasidagi chalkashlik avtomatik tuzatilmoqda..."
+        echo "build.gradle tuzatilmoqda..."
         sed -i '/^allprojects/,/^}/d' build.gradle
+
+    # >>> YANGI QO'SHILGAN QADAM: AndroidManifest.xml dagi xatoni avtomatik tuzatadi <<<
+    - name: Fix AndroidManifest.xml package error
+      run: |
+        echo "AndroidManifest.xml tuzatilmoqda..."
+        sed -i 's/package="com.pvzmod.game" //' app/src/main/AndroidManifest.xml
 
     - name: Build with Gradle
       run: ./gradlew assembleRelease --stacktrace

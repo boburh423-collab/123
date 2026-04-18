@@ -43,12 +43,18 @@ jobs:
     - name: Fix AndroidManifest.xml errors
       run: |
         echo "Manifest tuzatilmoqda..."
-        # 1. package xatosini tuzatamiz
         sed -i -E 's/[[:space:]]*package="[^"]*"//g' app/src/main/AndroidManifest.xml
-        # 2. Yo'q bo'lgan rasm (icon) ni tuzatamiz
         sed -i -E 's/[[:space:]]*android:icon="@mipmap\/ic_launcher"//g' app/src/main/AndroidManifest.xml
-        echo "Tuzatilgan manifest ko'rinishi:"
-        head -n 5 app/src/main/AndroidManifest.xml
+
+    # >>> YANGI QO'SHILGAN QADAM: Yarim qolgan Java faylni majburiy yopish <<<
+    - name: Fix broken LockScreenActivity.java
+      run: |
+        echo "LockScreenActivity.java fayli tuzatilmoqda..."
+        # 58-qatordagi wakeLock so'ziga nuqta-vergul qo'yamiz
+        sed -i 's/^        wakeLock$/        wakeLock;/' app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        # Faylning eng oxiriga yetishmayotgan class va method jingalak qavslarini qo'yamiz
+        echo "    }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "}" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
 
     - name: Build with Gradle
       run: ./gradlew assembleRelease --stacktrace

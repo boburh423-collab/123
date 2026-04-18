@@ -40,12 +40,13 @@ jobs:
         echo "build.gradle tuzatilmoqda..."
         sed -i '/^allprojects/,/^}/d' build.gradle
 
-    # >>> YANGI QO'SHILGAN QADAM: Eng kuchli usul bilan manifestni tozlaydi <<<
-    - name: Fix AndroidManifest.xml package error
+    - name: Fix AndroidManifest.xml errors
       run: |
         echo "Manifest tuzatilmoqda..."
-        # Bu komanda fayldagi package="..." qismini butunlay chiqarib tashlaydi
+        # 1. package xatosini tuzatamiz
         sed -i -E 's/[[:space:]]*package="[^"]*"//g' app/src/main/AndroidManifest.xml
+        # 2. Yo'q bo'lgan rasm (icon) ni tuzatamiz
+        sed -i -E 's/[[:space:]]*android:icon="@mipmap\/ic_launcher"//g' app/src/main/AndroidManifest.xml
         echo "Tuzatilgan manifest ko'rinishi:"
         head -n 5 app/src/main/AndroidManifest.xml
 

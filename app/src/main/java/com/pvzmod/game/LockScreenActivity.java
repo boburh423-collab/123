@@ -25,7 +25,7 @@ public class LockScreenActivity extends Activity {
     private int failedAttempts = 0;
     private String correctPin;
     private PowerManager.WakeLock wakeLock;
-    
+}
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

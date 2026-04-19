@@ -1,4 +1,4 @@
-name: Build PvZMod APK - FIXED JVM
+name: PvZMod APK Builder
 
 on:
   push:
@@ -11,19 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. Checkout
     - name: Checkout
       uses: actions/checkout@v4
       
-    # 2. JDK 17 + GRADLE PROPERTIES FIX
-    - name: Setup JDK 17
+    - name: Setup Java 17
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: 'gradle'
+        distribution: temurin
+        java-version: 17
+        cache: gradle
         
-    # 3. Cache Gradle
     - name: Cache Gradle
       uses: actions/cache@v4
       with:
@@ -35,92 +32,51 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
           
-    # 4. Fix permissions & line endings
-    - name: Setup files
+    - name: Install tools & Fix files
       run: |
         sudo apt-get update -y
-        sudo apt-get install -y dos2unix zip unzip aapt
-        chmod +x gradlew || true
-        dos2unix gradlew settings.gradle gradle.properties || true
-        find . -name "*.gradle" -exec dos2unix {} \; || true
-        find . -name "*.xml" -exec dos2unix {} \; || true
-        find . -name "*.java" -exec dos2unix {} \; || true
+        sudo apt-get install -y dos2unix aapt
+        chmod +x gradlew
+        dos2unix gradlew *.gradle* || true
         
-    # 5. ✅ AUTO-FIX AndroidManifest.xml
-    - name: Fix Manifest (android:exported)
+    - name: Fix AndroidManifest.xml
       run: |
-        sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:enabled="true" android:exported="false">|g' app/src/main/AndroidManifest.xml
-        sed -i '/android:name=".MainActivity"/a\    android:exported="true"' app/src/main/AndroidManifest.xml
-        sed -i '/android:name=".LockScreenActivity"/a\    android:exported="false"' app/src/main/AndroidManifest.xml
-        cat app/src/main/AndroidManifest.xml
+        sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:enabled="true" android:exported="false">|g' app/src/main/AndroidManifest.xml 2>/dev/null || true
+        sed -i '/android:name="\.MainActivity"/a\    android:exported="true"' app/src/main/AndroidManifest.xml 2>/dev/null || true
         
-    # 6. Create missing dirs & dummy resources
     - name: Create resources
       run: |
-        mkdir -p app/src/main/res/{layout,mipmap-{hdpi,mdpi,xhdpi,xxhdpi}}
-        mkdir -p app/src/main/res/values
+        mkdir -p app/src/main/res/{layout,mipmap-hdpi,mipmap-mdpi,res/values}
         
-        # Dummy strings.xml
-        cat > app/src/main/res/values/strings.xml << EOF
+        cat > app/src/main/res/values/strings.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PvZ VIP MOD</string>
 </resources>
 EOF
         
-        # Dummy icon (colored square)
-        for dpi in hdpi mdpi xhdpi xxhdpi; do
-          mkdir -p app/src/main/res/mipmap-$dpi
-          echo '<?xml version="1.0" encoding="utf-8"?><shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="#00FF00"/><corners android:radius="16dp"/></shape>' > app/src/main/res/mipmap-$dpi/ic_launcher.png
-        done
-        
-    # 7. Fix gradle.properties (JVM fix)
     - name: Fix gradle.properties
       run: |
-        cat > gradle.properties << EOF
-org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+        cat > gradle.properties << 'EOF'
+org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -Dfile.encoding=UTF-8
 org.gradle.parallel=true
-org.gradle.caching=true
-org.gradle.configureondemand=true
 android.useAndroidX=true
-android.enableJetifier=true
 android.nonTransitiveRClass=true
 EOF
         
-    # 8. BUILD!
     - name: Build APK
       run: |
         ./gradlew clean
-        ./gradlew assembleRelease --stacktrace --info
+        ./gradlew assembleRelease --stacktrace
         
-    # 9. Verify & Sign APK
     - name: Verify APK
       run: |
-        echo "APK FILES:"
-        find app/build/outputs -name "*.apk" -ls
-        echo "APK INFO:"
+        ls -la app/build/outputs/apk/release/
         aapt dump badging app/build/outputs/apk/release/app-release.apk
-        echo "APK SIZE:"
-        ls -lh app/build/outputs/apk/release/app-release.apk
         
-    # 10. Upload APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: PvZMod-v2.0-APK
-        path: |
-          app/build/outputs/apk/release/app-release.apk
-        retention-days: 90
-        
-    # 11. Debug artifacts
-    - name: Upload debug files
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-debug
-        path: |
-          app/build/outputs/mapping/
-          app/build/reports/
-          build/
-          .gradle/
-        retention-days: 7
+        name: PvZMod-APK
+        path: app/build/outputs/apk/release/app-release.apk
+        retention-days: 30

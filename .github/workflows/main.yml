@@ -1,5 +1,6 @@
 name: PvZMod Builder
 on: [push, pull_request]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,15 +12,49 @@ jobs:
         distribution: temurin
         java-version: 17
         
+    # 1-QADAM: YO'Q BO'LGAN GRADLE WRAPPER NI YUKLAYMIZ (Aks holda -Xmx64m xatosi chiqadi)
+    - name: Generate missing Gradle Wrapper
+      run: |
+        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          unzip -q gradle-8.9-bin.zip
+          ./gradle-8.9/bin/gradle wrapper --gradle-version 8.9
+          rm -rf gradle-8.9-bin.zip gradle-8.9
+        fi
+
     - name: Fix files
       run: |
         chmod +x gradlew
         sudo apt-get install -y dos2unix aapt
         dos2unix gradlew *.gradle* || true
         
-    - name: Fix Manifest
-      run: sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:exported="false">|g' app/src/main/AndroidManifest.xml || true
+    # 2-QADAM: ROOT BUILD.GRADLE XATOSINI TUZATAMIZ
+    - name: Fix build.gradle
+      run: sed -i '/^allprojects/,/^}/d' build.gradle || true
+
+    # 3-QADAM: MANIFEST XATOLARINI TUZATAMIZ (package= va icon= ni o'chiramiz)
+    - name: Fix AndroidManifest.xml
+      run: |
+        sed -i -E 's/[[:space:]]*package="[^"]*"//g' app/src/main/AndroidManifest.xml || true
+        sed -i -E 's/[[:space:]]*android:icon="@mipmap\/ic_launcher"//g' app/src/main/AndroidManifest.xml || true
+        sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:exported="false">|g' app/src/main/AndroidManifest.xml || true
     
+    # 4-QADAM: YARIM QOLGAN LOCKSCREEN FAYLINI TO'G'RILAYMIZ
+    - name: Fix broken LockScreenActivity.java
+      run: |
+        mkdir -p app/src/main/java/com/pvzmod/game
+        echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "import android.app.Activity;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "import android.os.Bundle;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "public class LockScreenActivity extends Activity {" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "    @Override" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "    protected void onCreate(Bundle savedInstanceState) {" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "        super.onCreate(savedInstanceState);" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "    }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "}" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+
     - name: Create resources
       run: mkdir -p app/src/main/res/values && echo '<?xml version="1.0"?><resources><string name="app_name">PvZ VIP</string></resources>' > app/src/main/res/values/strings.xml
     
@@ -29,4 +64,4 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: PvZMod.apk
-        path: app/build/outputs/apk/release/app-release.apk
+        path: '**/build/outputs/apk/release/*.apk'

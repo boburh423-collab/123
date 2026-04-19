@@ -55,4 +55,4 @@ public class LockScreenActivity extends Activity {
     
     private void acquireWakeLock() {
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakeLock
+        wakeLock;

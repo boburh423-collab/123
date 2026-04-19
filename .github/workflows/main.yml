@@ -36,12 +36,11 @@ jobs:
         sed -i -E 's/[[:space:]]*android:theme="@style\/Theme.AppCompat"//g' app/src/main/AndroidManifest.xml || true
         sed -i -E 's/[[:space:]]*android:wakeAfterReceivingAction="[^"]*"//g' app/src/main/AndroidManifest.xml || true
     
-    # >>> YANGI: Ikkala MainActivity ga ham import qo'shamiz va fayllarni tekshiramiz <<<
-    - name: Fix and Debug Java files
+    # >>> YANGI: Java fayllarini to'liq va aniq tuzatish <<<
+    - name: Fix Java Files Package and Imports
       run: |
+        # 1. LockScreenActivity ni to'g'ri yaratamiz
         mkdir -p app/src/main/java/com/pvzmod/game
-        
-        # LockScreenActivity ni to'g'ri yozamiz
         echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "import android.app.Activity;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
@@ -54,15 +53,11 @@ jobs:
         echo "    }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "}" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         
-        # IKKALA MainActivity fayliga ham import qo'shamiz
-        sed -i '1i import com.pvzmod.game.LockScreenActivity;' app/src/main/java/com/pvzmod/MainActivity.java || true
-        sed -i '1i import com.pvzmod.game.LockScreenActivity;' app/src/main/java/com/pvzmod/game/MainActivity.java || true
+        # 2. MainActivity dan avval qo'shilgan noto'g'ri importni o'chiramiz
+        sed -i '1{/^import com.pvzmod.game.LockScreenActivity;/d}' app/src/main/java/com/pvzmod/game/MainActivity.java
         
-        # TEKSHIRISH: Loglarga fayllar ichini chiqaramiz
-        echo "=== LockScreenActivity.java ==="
-        cat app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "=== game/MainActivity.java (birinchi 5 qator) ==="
-        head -n 5 app/src/main/java/com/pvzmod/game/MainActivity.java
+        # 3. MainActivity dagi noto'g'ri package nomini to'g'risiga o'zgartiramiz
+        sed -i 's/^package com.pvzmod.vip;/package com.pvzmod.game;/' app/src/main/java/com/pvzmod/game/MainActivity.java
 
     - name: Create resources
       run: mkdir -p app/src/main/res/values && echo '<?xml version="1.0"?><resources><string name="app_name">PvZ VIP</string></resources>' > app/src/main/res/values/strings.xml

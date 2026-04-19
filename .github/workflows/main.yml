@@ -12,20 +12,17 @@ jobs:
         distribution: temurin
         java-version: 17
         
-    # 1-QADAM: GRADLE WRAPPER NI ENG ISHONCHLI USULDA YUKLAYMIZ VA SOZLAMIZ
+    # 1-QADAM: GRADLE WRAPPER JAR FAYLINI TO'G'RIDAN-TO'G'RI YUKLAYMIZ (Juda tezkor usul)
     - name: Setup Gradle Wrapper
       run: |
-        wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
-        unzip -q gradle-8.9-bin.zip
         mkdir -p gradle/wrapper
-        cp gradle-8.9/lib/gradle-wrapper-8.9.jar gradle/wrapper/gradle-wrapper.jar
+        wget -q -O gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradle/wrapper/gradle-wrapper.jar
         printf "distributionBase=GRADLE_USER_HOME\n\
         distributionPath=wrapper/dists\n\
         distributionUrl=https\\://services.gradle.org/distributions/gradle-8.9-bin.zip\n\
         zipStoreBase=GRADLE_USER_HOME\n\
         zipStorePath=wrapper/dists\n" > gradle/wrapper/gradle-wrapper.properties
         chmod +x gradlew
-        rm -rf gradle-8.9-bin.zip gradle-8.9
 
     - name: Fix files
       run: |

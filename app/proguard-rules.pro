@@ -1,7 +1,4 @@
--keep class com.pvzmod.game.** { *; }
--keepclasseswithmembernames class * { native <methods>; }
+-keep class com.pvzmod.vip.** { *; }
 -dontwarn okhttp3.**
--dontwarn okio.**
--keep class okhttp3.** { *; }
--keep class okio.** { *; }
--obfuscationdictionary dictionary.txt
+-keepattributes *Annotation*
+-renamesourcefileattribute SourceFile

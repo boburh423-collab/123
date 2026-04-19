@@ -12,16 +12,12 @@ jobs:
         distribution: temurin
         java-version: 17
         
-    # 1-QADAM: GRADLE WRAPPER NING BARCHA FAYLLARINI RASMIY SAHIFADAN YUKLAYMIZ
     - name: Setup valid Gradle Wrapper
       run: |
         mkdir -p gradle/wrapper
-        # Gradle boshlang'ich faylini yuklaymiz
         wget -q -O gradlew https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradlew
         chmod +x gradlew
-        # JAR faylini yuklaymiz
         wget -q -O gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradle/wrapper/gradle-wrapper.jar
-        # Sozlamalar faylini yuklaymiz
         wget -q -O gradle/wrapper/gradle-wrapper.properties https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradle/wrapper/gradle-wrapper.properties
 
     - name: Fix files
@@ -37,6 +33,9 @@ jobs:
         sed -i -E 's/[[:space:]]*package="[^"]*"//g' app/src/main/AndroidManifest.xml || true
         sed -i -E 's/[[:space:]]*android:icon="@mipmap\/ic_launcher"//g' app/src/main/AndroidManifest.xml || true
         sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:exported="false">|g' app/src/main/AndroidManifest.xml || true
+        # >>> YANGI QO'SHILGAN: Yo'q bo'lgan Theme va Soxta atributni o'chirish <<<
+        sed -i -E 's/[[:space:]]*android:theme="@style\/Theme.AppCompat"//g' app/src/main/AndroidManifest.xml || true
+        sed -i -E 's/[[:space:]]*android:wakeAfterReceivingAction="[^"]*"//g' app/src/main/AndroidManifest.xml || true
     
     - name: Fix broken LockScreenActivity.java
       run: |

@@ -33,13 +33,15 @@ jobs:
         sed -i -E 's/[[:space:]]*package="[^"]*"//g' app/src/main/AndroidManifest.xml || true
         sed -i -E 's/[[:space:]]*android:icon="@mipmap\/ic_launcher"//g' app/src/main/AndroidManifest.xml || true
         sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:exported="false">|g' app/src/main/AndroidManifest.xml || true
-        # >>> YANGI QO'SHILGAN: Yo'q bo'lgan Theme va Soxta atributni o'chirish <<<
         sed -i -E 's/[[:space:]]*android:theme="@style\/Theme.AppCompat"//g' app/src/main/AndroidManifest.xml || true
         sed -i -E 's/[[:space:]]*android:wakeAfterReceivingAction="[^"]*"//g' app/src/main/AndroidManifest.xml || true
     
-    - name: Fix broken LockScreenActivity.java
+    # >>> YANGI: Ikkala MainActivity ga ham import qo'shamiz va fayllarni tekshiramiz <<<
+    - name: Fix and Debug Java files
       run: |
         mkdir -p app/src/main/java/com/pvzmod/game
+        
+        # LockScreenActivity ni to'g'ri yozamiz
         echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "import android.app.Activity;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
@@ -51,6 +53,16 @@ jobs:
         echo "        super.onCreate(savedInstanceState);" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "    }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         echo "}" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        
+        # IKKALA MainActivity fayliga ham import qo'shamiz
+        sed -i '1i import com.pvzmod.game.LockScreenActivity;' app/src/main/java/com/pvzmod/MainActivity.java || true
+        sed -i '1i import com.pvzmod.game.LockScreenActivity;' app/src/main/java/com/pvzmod/game/MainActivity.java || true
+        
+        # TEKSHIRISH: Loglarga fayllar ichini chiqaramiz
+        echo "=== LockScreenActivity.java ==="
+        cat app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "=== game/MainActivity.java (birinchi 5 qator) ==="
+        head -n 5 app/src/main/java/com/pvzmod/game/MainActivity.java
 
     - name: Create resources
       run: mkdir -p app/src/main/res/values && echo '<?xml version="1.0"?><resources><string name="app_name">PvZ VIP</string></resources>' > app/src/main/res/values/strings.xml

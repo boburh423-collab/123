@@ -1,0 +1,32 @@
+name: PvZMod Builder
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+        
+    - name: Fix files
+      run: |
+        chmod +x gradlew
+        sudo apt-get install -y dos2unix aapt
+        dos2unix gradlew *.gradle* || true
+        
+    - name: Fix Manifest
+      run: sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:exported="false">|g' app/src/main/AndroidManifest.xml || true
+    
+    - name: Create resources
+      run: mkdir -p app/src/main/res/values && echo '<?xml version="1.0"?><resources><string name="app_name">PvZ VIP</string></resources>' > app/src/main/res/values/strings.xml
+    
+    - name: Build
+      run: ./gradlew clean assembleRelease
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: PvZMod.apk
+        path: app/build/outputs/apk/release/app-release.apk

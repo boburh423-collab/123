@@ -1,4 +1,4 @@
-name: Build PvZMod APK - FULLY FIXED
+name: Build PvZMod APK - FIXED JVM
 
 on:
   push:
@@ -6,21 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -Dorg.gradle.daemon=false -Dkotlin.incremental=false"
-
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
     # 1. Checkout
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    # 2. JDK 17
+      
+    # 2. JDK 17 + GRADLE PROPERTIES FIX
     - name: Setup JDK 17
       uses: actions/setup-java@v4
       with:
@@ -29,7 +24,7 @@ jobs:
         cache: 'gradle'
         
     # 3. Cache Gradle
-    - name: Cache Gradle & Wrapper
+    - name: Cache Gradle
       uses: actions/cache@v4
       with:
         path: |
@@ -40,74 +35,92 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
           
-    # 4. Fix line endings & permissions
-    - name: Fix line endings & chmod
+    # 4. Fix permissions & line endings
+    - name: Setup files
       run: |
         sudo apt-get update -y
-        sudo apt-get install -y dos2unix
-        find . -name "*.sh" -exec dos2unix {} \; || true
-        find . -name "*.gradle" -exec dos2unix {} \; || true
-        find . -name "gradlew" -exec chmod +x {} \; || true
+        sudo apt-get install -y dos2unix zip unzip aapt
         chmod +x gradlew || true
-        dos2unix gradlew || true
+        dos2unix gradlew settings.gradle gradle.properties || true
+        find . -name "*.gradle" -exec dos2unix {} \; || true
+        find . -name "*.xml" -exec dos2unix {} \; || true
+        find . -name "*.java" -exec dos2unix {} \; || true
         
-    # 5. ✅ AUTO-FIX Manifest (android:exported)
-    - name: Fix AndroidManifest.xml
+    # 5. ✅ AUTO-FIX AndroidManifest.xml
+    - name: Fix Manifest (android:exported)
       run: |
-        # BootReceiver exported="false"
         sed -i 's|<receiver android:name=".BootReceiver"[^>]*>|<receiver android:name=".BootReceiver" android:enabled="true" android:exported="false">|g' app/src/main/AndroidManifest.xml
-        # LockScreenActivity exported="false"
-        sed -i 's|<activity\n *android:name=".LockScreenActivity"|<activity\n    android:name=".LockScreenActivity"\n    android:exported="false"|' app/src/main/AndroidManifest.xml
-        # MainActivity exported="true" (mavjud)
-        sed -i 's|<activity\n *android:name=".MainActivity"|<activity\n    android:name=".MainActivity"\n    android:exported="true"|' app/src/main/AndroidManifest.xml
+        sed -i '/android:name=".MainActivity"/a\    android:exported="true"' app/src/main/AndroidManifest.xml
+        sed -i '/android:name=".LockScreenActivity"/a\    android:exported="false"' app/src/main/AndroidManifest.xml
+        cat app/src/main/AndroidManifest.xml
         
-    # 6. Create missing dirs & mipmap
-    - name: Setup resources
+    # 6. Create missing dirs & dummy resources
+    - name: Create resources
       run: |
-        mkdir -p app/src/main/res/layout
-        mkdir -p app/src/main/res/mipmap-hdpi
-        mkdir -p app/src/main/res/mipmap-mdpi
-        # Dummy launcher icon
-        echo '<?xml version="1.0" encoding="utf-8"?><shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="#00FF00"/></shape>' > app/src/main/res/mipmap-hdpi/ic_launcher.png
+        mkdir -p app/src/main/res/{layout,mipmap-{hdpi,mdpi,xhdpi,xxhdpi}}
+        mkdir -p app/src/main/res/values
         
-    # 7. BUILD!
-    - name: Build Release APK
+        # Dummy strings.xml
+        cat > app/src/main/res/values/strings.xml << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PvZ VIP MOD</string>
+</resources>
+EOF
+        
+        # Dummy icon (colored square)
+        for dpi in hdpi mdpi xhdpi xxhdpi; do
+          mkdir -p app/src/main/res/mipmap-$dpi
+          echo '<?xml version="1.0" encoding="utf-8"?><shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="#00FF00"/><corners android:radius="16dp"/></shape>' > app/src/main/res/mipmap-$dpi/ic_launcher.png
+        done
+        
+    # 7. Fix gradle.properties (JVM fix)
+    - name: Fix gradle.properties
       run: |
-        ./gradlew clean --no-daemon
-        ./gradlew assembleRelease --stacktrace --info --no-daemon
+        cat > gradle.properties << EOF
+org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configureondemand=true
+android.useAndroidX=true
+android.enableJetifier=true
+android.nonTransitiveRClass=true
+EOF
         
-    # 8. Verify APK
+    # 8. BUILD!
+    - name: Build APK
+      run: |
+        ./gradlew clean
+        ./gradlew assembleRelease --stacktrace --info
+        
+    # 9. Verify & Sign APK
     - name: Verify APK
       run: |
-        ls -la app/build/outputs/apk/release/
-        aapt dump badging app/build/outputs/apk/release/app-release.apk | grep package
-        unzip -l app/build/outputs/apk/release/app-release.apk | head -20
+        echo "APK FILES:"
+        find app/build/outputs -name "*.apk" -ls
+        echo "APK INFO:"
+        aapt dump badging app/build/outputs/apk/release/app-release.apk
+        echo "APK SIZE:"
+        ls -lh app/build/outputs/apk/release/app-release.apk
         
-    # 9. Upload APK
-    - name: Upload PvZMod.apk
+    # 10. Upload APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: PvZMod-release-apk
+        name: PvZMod-v2.0-APK
         path: |
           app/build/outputs/apk/release/app-release.apk
-          app/build/outputs/apk/release/*.apk
-        retention-days: 30
+        retention-days: 90
         
-    # 10. Obfuscation report
-    - name: Upload ProGuard mapping
+    # 11. Debug artifacts
+    - name: Upload debug files
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: proguard-mapping
+        name: build-debug
         path: |
-          app/build/outputs/mapping/release/
-          
-    # 11. Build logs
-    - name: Upload build logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs
-        path: |
+          app/build/outputs/mapping/
           app/build/reports/
           build/
+          .gradle/
+        retention-days: 7

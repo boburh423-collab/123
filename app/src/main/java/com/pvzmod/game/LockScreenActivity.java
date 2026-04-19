@@ -25,7 +25,7 @@ public class LockScreenActivity extends Activity {
     private int failedAttempts = 0;
     private String correctPin;
     private PowerManager.WakeLock wakeLock;
-}
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +43,7 @@ public class LockScreenActivity extends Activity {
         
         acquireWakeLock();
         unlockBtn.setOnClickListener(v -> checkPin());
-    }
+    
     
     private void setFullScreenLock() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |

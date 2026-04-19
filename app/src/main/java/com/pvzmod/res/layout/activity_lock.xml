@@ -5,46 +5,56 @@
     android:background="#000000"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="32dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🌱 PvZ VIP MOD"
+        android:textColor="#00FF00"
+        android:textSize="32sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/ransom_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Qulf ochildi!"
-        android:textColor="#FF0000"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:gravity="center" />
+        android:layout_marginTop="32dp"
+        android:gravity="center"
+        android:text="Ransom text"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/attempts_text"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Urinishlar: 3"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="16dp"
+        android:text="Xatolar: 0/3"
+        android:textColor="#FFFF00"
+        android:textSize="16sp" />
 
     <EditText
         android:id="@+id/pin_input"
         android:layout_width="200dp"
         android:layout_height="60dp"
-        android:layout_marginTop="30dp"
-        android:background="#333333"
+        android:layout_marginTop="32dp"
+        android:background="@android:drawable/edit_text"
+        android:gravity="center"
         android:inputType="numberPassword"
+        android:maxLength="4"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        android:gravity="center" />
+        android:textSize="24sp" />
 
     <Button
         android:id="@+id/unlock_btn"
         android:layout_width="200dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="20dp"
-        android:background="#4CAF50"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#00FF00"
         android:text="OCHISH"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp" />
+        android:textColor="#000000"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
 </LinearLayout>

